@@ -10,11 +10,9 @@ from maintenance.scenarios import get_scenario
 
 def seed_force(cycles: int = 12) -> int:
     """Always write fresh demo telemetry (after reset)."""
-    if not MODEL_PATH.exists():
-        return -1
-    from tensorflow.keras.models import load_model
+    from maintenance.health_model import load_health_model
 
-    model = load_model(str(MODEL_PATH))
+    model = load_health_model(MODEL_PATH)
     system = HybridMaintenanceSystem(model, get_scenario("Plant stress"))
     pool = create_synthetic_data(SupervisedConfig(), num_samples=300)
     written = 0
@@ -32,12 +30,9 @@ def seed_if_empty(min_rows: int = 80) -> int:
         count = conn.execute("SELECT COUNT(*) FROM reports").fetchone()[0]
     if count >= min_rows:
         return 0
-    if not MODEL_PATH.exists():
-        return -1
+    from maintenance.health_model import load_health_model
 
-    from tensorflow.keras.models import load_model
-
-    model = load_model(str(MODEL_PATH))
+    model = load_health_model(MODEL_PATH)
     system = HybridMaintenanceSystem(model, get_scenario("Plant stress"))
     pool = create_synthetic_data(SupervisedConfig(), num_samples=300)
     written = 0

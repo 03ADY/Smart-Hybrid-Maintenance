@@ -3,7 +3,6 @@
 import json
 
 import streamlit as st
-from tensorflow.keras.models import load_model
 
 import database
 from maintenance.config import (
@@ -15,14 +14,13 @@ from maintenance.config import (
     NUM_MACHINES,
 )
 from maintenance.core import HybridMaintenanceSystem, SupervisedConfig, create_synthetic_data
+from maintenance.health_model import load_health_model
 from maintenance.scenarios import SCENARIOS, get_scenario
 
 
 @st.cache_resource
 def load_model_cached():
-    if not MODEL_PATH.exists():
-        return None
-    return load_model(str(MODEL_PATH))
+    return load_health_model(MODEL_PATH)
 
 
 @st.cache_data
@@ -134,6 +132,5 @@ def render_alert_banner(reports: dict | None = None):
 
 def ensure_model_message():
     if not MODEL_PATH.exists():
-        st.error("Run `python train.py` to create health_model.h5")
-        return False
+        st.info("Using built-in health estimator (no `train.py` needed for demos). Run `python train.py` locally for full LSTM.")
     return True

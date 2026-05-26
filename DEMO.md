@@ -1,9 +1,10 @@
 # PredictiveOps — 2 min Demo
 
 ```powershell
-python train.py
 .\scripts\start-demo.ps1
 ```
+
+Optional local LSTM: `pip install -r requirements-train.txt` then `python train.py`
 
 **http://127.0.0.1:8504** · Data auto-seeds on first run.
 

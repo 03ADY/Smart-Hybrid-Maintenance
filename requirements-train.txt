@@ -1,0 +1,3 @@
+# Optional — only for local LSTM training (not required on Streamlit Cloud)
+-r requirements.txt
+tensorflow==2.15.1
