@@ -2,13 +2,15 @@
 
 import streamlit as st
 
-import database
-from maintenance.bootstrap import fleet_status_color, init_app, model_metadata
 from maintenance.config import APP_NAME, FEATURE_NAMES, MODEL_PATH, NUM_MACHINES
-from maintenance.oee import compute_oee
 from maintenance.theme import fleet_card_html, hero_html, page_setup
 
 page_setup(APP_NAME, "⚙️")
+
+import database
+from maintenance.bootstrap import fleet_status_color, init_app, model_metadata
+from maintenance.oee import compute_oee
+
 init_app()
 
 if st.session_state.get("seed_msg"):

@@ -53,17 +53,17 @@ def add_report(report: dict) -> None:
         """, (
             report["timestamp"],
             report["machine_id"],
-            report["health_metrics"]["health_score"],
-            report["health_metrics"]["failure_prob"],
-            report["health_metrics"]["rul"],
-            report["maintenance_action"]["action"],
-            json.dumps(report["explanation"]),
+            report.get("health_metrics", {}).get("health_score", 0.0),
+            report.get("health_metrics", {}).get("failure_prob", 0.0),
+            report.get("health_metrics", {}).get("rul", 0.0),
+            report.get("maintenance_action", {}).get("action", 0),
+            json.dumps(report.get("explanation", {})),
             report.get("problem_description", ""),
             report.get("suggested_resolution", ""),
-            report["maintenance_action"]["label"],
+            report.get("maintenance_action", {}).get("label", "No action"),
             report.get("priority", "—"),
             json.dumps(report.get("sensor_snapshot", {})),
-            report["health_metrics"].get("status", "HEALTHY"),
+            report.get("health_metrics", {}).get("status", "HEALTHY"),
         ))
         conn.commit()
 

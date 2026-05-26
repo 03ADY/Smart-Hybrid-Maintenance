@@ -107,7 +107,10 @@ class HybridMaintenanceSystem:
             health["status"] = _status_label(health["health_score"])
             forced = self.scenario.get("forced_problem")
             if forced:
-                fault = next(f for f in FAULT_SCENARIOS if f["problem"] == forced)
+                fault = next(
+                    (f for f in FAULT_SCENARIOS if f["problem"] == forced),
+                    FAULT_SCENARIOS[0],
+                )
             else:
                 fault = random.choice(FAULT_SCENARIOS)
             problem = fault["problem"]

@@ -128,7 +128,10 @@ hr { border-color: rgba(148, 163, 184, 0.2) !important; }
 
 
 def inject_theme() -> None:
-    pio.templates.default = "plotly_dark"
+    try:
+        pio.templates.default = "plotly_dark"
+    except (KeyError, ValueError):
+        pass
     st.markdown(_CSS, unsafe_allow_html=True)
 
 

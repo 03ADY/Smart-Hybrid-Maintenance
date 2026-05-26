@@ -18,14 +18,23 @@ from maintenance.health_model import load_health_model
 from maintenance.scenarios import SCENARIOS, get_scenario
 
 
-@st.cache_resource
-def load_model_cached():
+@st.cache_resource(show_spinner=False)
+def load_model_cached_v2():
+    """v2 suffix busts stale Streamlit Cloud cache from older builds."""
     return load_health_model(MODEL_PATH)
 
 
-@st.cache_data
-def load_sensor_pool():
+@st.cache_data(show_spinner=False)
+def load_sensor_pool_v2():
     return create_synthetic_data(SupervisedConfig(), num_samples=500)
+
+
+def load_model_cached():
+    return load_model_cached_v2()
+
+
+def load_sensor_pool():
+    return load_sensor_pool_v2()
 
 
 def get_system() -> HybridMaintenanceSystem | None:
@@ -50,11 +59,14 @@ def render_insight_cards(cards: list[dict]) -> None:
     html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;margin:0.5rem 0 1rem;">'
     for c in cards[:5]:
         border = {"positive": "#22c55e", "warning": "#f59e0b", "neutral": "#6366f1"}.get(c.get("tone", "neutral"), "#6366f1")
+        icon = c.get("icon", "•")
+        title = c.get("title", "Insight")
+        body = c.get("body", "")
         html += (
             f'<div style="background:rgba(30,41,59,0.92);border:1px solid rgba(148,163,184,0.15);'
             f'border-left:4px solid {border};border-radius:12px;padding:0.9rem 1rem;">'
-            f'<div style="font-size:0.85rem;color:#94a3b8;">{c["icon"]} {c["title"]}</div>'
-            f'<div style="font-size:0.92rem;color:#e2e8f0;margin-top:0.35rem;">{c["body"]}</div></div>'
+            f'<div style="font-size:0.85rem;color:#94a3b8;">{icon} {title}</div>'
+            f'<div style="font-size:0.92rem;color:#e2e8f0;margin-top:0.35rem;">{body}</div></div>'
         )
     html += "</div>"
     st.markdown(html, unsafe_allow_html=True)
@@ -66,7 +78,7 @@ def render_demo_sidebar() -> dict:
     st.session_state.present_mode = present
     scenario = st.selectbox("Scenario", list(SCENARIOS.keys()), key="scenario_select")
     st.session_state.scenario_name = scenario
-    st.caption(SCENARIOS[scenario]["blurb"])
+    st.caption(SCENARIOS.get(scenario, SCENARIOS["Normal operations"]).get("blurb", ""))
 
     crit = HEALTH_CRITICAL if present else st.slider("Critical below", 0.3, 0.6, HEALTH_CRITICAL, 0.05)
     warn = HEALTH_WARNING if present else st.slider("Warning below", 0.6, 0.9, HEALTH_WARNING, 0.05)
