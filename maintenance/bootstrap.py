@@ -96,7 +96,15 @@ def render_demo_sidebar() -> dict:
         key="present_mode_toggle",
     )
     st.session_state.present_mode = present
-    scenario = sb.selectbox("Scenario", list(SCENARIOS.keys()), key="scenario_select")
+    scenario_names = list(SCENARIOS.keys())
+    current = st.session_state.get("scenario_name", scenario_names[0])
+    scenario_idx = scenario_names.index(current) if current in scenario_names else 0
+    scenario = sb.radio(
+        "Scenario",
+        scenario_names,
+        index=scenario_idx,
+        key="scenario_select",
+    )
     st.session_state.scenario_name = scenario
     sb.caption(SCENARIOS.get(scenario, SCENARIOS["Normal operations"]).get("blurb", ""))
 
