@@ -6,6 +6,7 @@ import streamlit as st
 
 import database
 from maintenance.config import (
+    APP_NAME,
     DEFAULT_DOWNTIME_COST_PER_HOUR,
     HEALTH_CRITICAL,
     HEALTH_WARNING,
@@ -72,34 +73,84 @@ def render_insight_cards(cards: list[dict]) -> None:
     st.markdown(html, unsafe_allow_html=True)
 
 
-def render_demo_sidebar() -> dict:
-    st.markdown("### 🎬 Demo")
-    present = st.toggle("Present mode", value=st.session_state.get("present_mode", True), key="present_mode_toggle")
-    st.session_state.present_mode = present
-    scenario = st.selectbox("Scenario", list(SCENARIOS.keys()), key="scenario_select")
-    st.session_state.scenario_name = scenario
-    st.caption(SCENARIOS.get(scenario, SCENARIOS["Normal operations"]).get("blurb", ""))
+def get_demo_opts() -> dict:
+    """Demo controls set in app.py sidebar before each page runs."""
+    return st.session_state.get(
+        "demo_opts",
+        {
+            "present": True,
+            "scenario": "Normal operations",
+            "critical": HEALTH_CRITICAL,
+            "warn": HEALTH_WARNING,
+            "downtime_cost": DEFAULT_DOWNTIME_COST_PER_HOUR,
+        },
+    )
 
-    crit = HEALTH_CRITICAL if present else st.slider("Critical below", 0.3, 0.6, HEALTH_CRITICAL, 0.05)
-    warn = HEALTH_WARNING if present else st.slider("Warning below", 0.6, 0.9, HEALTH_WARNING, 0.05)
-    downtime = DEFAULT_DOWNTIME_COST_PER_HOUR if present else st.number_input(
+
+def render_demo_sidebar() -> dict:
+    sb = st.sidebar
+    sb.markdown("### 🎬 Demo")
+    present = sb.toggle(
+        "Present mode",
+        value=st.session_state.get("present_mode", True),
+        key="present_mode_toggle",
+    )
+    st.session_state.present_mode = present
+    scenario = sb.selectbox("Scenario", list(SCENARIOS.keys()), key="scenario_select")
+    st.session_state.scenario_name = scenario
+    sb.caption(SCENARIOS.get(scenario, SCENARIOS["Normal operations"]).get("blurb", ""))
+
+    crit = HEALTH_CRITICAL if present else sb.slider("Critical below", 0.3, 0.6, HEALTH_CRITICAL, 0.05)
+    warn = HEALTH_WARNING if present else sb.slider("Warning below", 0.6, 0.9, HEALTH_WARNING, 0.05)
+    downtime = DEFAULT_DOWNTIME_COST_PER_HOUR if present else sb.number_input(
         "Downtime cost ($/hr)", 1000, 20000, DEFAULT_DOWNTIME_COST_PER_HOUR, 500
     )
 
-    with st.expander("Demo tools"):
-        if st.button("🔄 Reseed telemetry", use_container_width=True):
+    with sb.expander("Demo tools"):
+        if sb.button("🔄 Reseed telemetry", use_container_width=True):
             from maintenance.seed import seed_force
+
             n = seed_force()
             st.session_state["seed_msg"] = f"Reseeded {n} records." if n > 0 else "Train model first."
             st.rerun()
-        if st.button("🗑️ Reset demo DB", use_container_width=True):
+        if sb.button("🗑️ Reset demo DB", use_container_width=True):
             database.init_db(force_reset=True)
             for key in ("fleet_reports", "fleet_run", "run", "acked_alerts"):
                 st.session_state.pop(key, None)
             st.session_state["seed_msg"] = "Database cleared."
             st.rerun()
 
-    return {"present": present, "scenario": scenario, "critical": crit, "warn": warn, "downtime_cost": downtime}
+    opts = {
+        "present": present,
+        "scenario": scenario,
+        "critical": crit,
+        "warn": warn,
+        "downtime_cost": downtime,
+    }
+    st.session_state["demo_opts"] = opts
+    return opts
+
+
+def render_sidebar_footer() -> None:
+    """Shared sidebar tail — fills empty space and keeps layout consistent across pages."""
+    sb = st.sidebar
+    sb.divider()
+    kpis = database.fleet_kpis()
+    n_alerts = len(database.get_alerts(50))
+    if kpis["total_records"]:
+        sb.caption(
+            f"Fleet · {kpis['avg_health']:.0%} avg health · "
+            f"{kpis['critical']} critical · {n_alerts} alerts"
+        )
+    else:
+        sb.caption("Run a fleet scan or live simulation to populate telemetry.")
+
+    sb.markdown("**Shortcuts**")
+    sb.page_link("views/dashboard.py", label="🏠 Dashboard", use_container_width=True)
+    sb.page_link("pages/0_🌐_Fleet_Command_Center.py", label="🌐 Fleet scan", use_container_width=True)
+    sb.page_link("pages/5_🚨_Alert_Center.py", label="🚨 Alerts", use_container_width=True)
+    sb.page_link("pages/1_📈_Live_Dashboard.py", label="📈 Live machine", use_container_width=True)
+    sb.caption(APP_NAME)
 
 
 def fleet_status_color(score: float, critical: float = HEALTH_CRITICAL, warning: float = HEALTH_WARNING) -> str:

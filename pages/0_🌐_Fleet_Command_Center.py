@@ -18,13 +18,14 @@ from maintenance.bootstrap import (
     render_alert_banner,
     render_demo_sidebar,
     render_insight_cards,
+    render_sidebar_footer,
 )
 from maintenance.config import APP_NAME, NUM_MACHINES
 from maintenance.insights import estimate_roi, executive_brief, fleet_summary, insight_cards
 from maintenance.reports import html_executive_report
 from maintenance.theme import page_setup
 
-page_setup("Fleet Command", "🌐")
+page_setup("Fleet Command", "🌐", set_config=False)
 init_app()
 st.title("🌐 Fleet Command Center")
 
@@ -43,6 +44,7 @@ if st.sidebar.button("▶️ Run fleet scan", type="primary"):
 if st.sidebar.button("⏹️ Stop"):
     st.session_state.fleet_run = False
 refresh = 2 if opts["present"] else st.sidebar.slider("Refresh (sec)", 1, 5, 2)
+render_sidebar_footer()
 
 if "fleet_reports" not in st.session_state:
     st.session_state.fleet_reports = {}

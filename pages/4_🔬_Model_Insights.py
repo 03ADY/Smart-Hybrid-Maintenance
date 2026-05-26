@@ -5,15 +5,14 @@ import streamlit as st
 
 import database
 from maintenance.analytics import aggregate_drivers, fleet_health_heatmap, shift_comparison
-from maintenance.bootstrap import init_app, model_metadata, render_demo_sidebar
+from maintenance.bootstrap import init_app, model_metadata
 from maintenance.config import APP_NAME, FEATURE_NAMES, MODEL_PATH
 
 from maintenance.theme import page_setup
 
-page_setup("Model Insights", "🔬")
+page_setup("Model Insights", "🔬", set_config=False)
 init_app()
 st.title("🔬 Model & Fleet Analytics")
-render_demo_sidebar()
 
 meta = model_metadata()
 hist = database.get_fleet_history(2000)

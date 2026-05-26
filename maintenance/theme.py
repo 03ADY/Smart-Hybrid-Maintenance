@@ -211,6 +211,14 @@ a[data-testid="stPageLink-NavLink"]:hover {
 }
 
 hr { border-color: rgba(148, 163, 184, 0.2) !important; }
+
+/* Tighter sidebar — less dead space below nav */
+[data-testid="stSidebarUserContent"] {
+  padding-bottom: 0.5rem !important;
+}
+[data-testid="stSidebar"] .stPageLink {
+  margin-bottom: 0.25rem !important;
+}
 </style>
 """.replace("ACCENT_A", ACCENT[0]).replace("ACCENT_B", ACCENT[1]).replace("PRIMARY", PRIMARY)
 
@@ -223,9 +231,16 @@ def inject_theme() -> None:
     st.markdown(_CSS, unsafe_allow_html=True)
 
 
-def page_setup(page_title: str, page_icon: str = "⚙️", layout: str = "wide") -> None:
-    """Must be the first Streamlit call on each page."""
-    st.set_page_config(page_title=page_title, page_icon=page_icon, layout=layout)
+def page_setup(
+    page_title: str,
+    page_icon: str = "⚙️",
+    layout: str = "wide",
+    *,
+    set_config: bool = True,
+) -> None:
+    """Theme + optional page config (disabled when using st.navigation entrypoint)."""
+    if set_config:
+        st.set_page_config(page_title=page_title, page_icon=page_icon, layout=layout)
     inject_theme()
 
 

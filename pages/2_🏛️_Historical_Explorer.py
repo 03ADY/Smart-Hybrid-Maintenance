@@ -7,15 +7,14 @@ import plotly.express as px
 import streamlit as st
 
 import database
-from maintenance.bootstrap import init_app, render_demo_sidebar
+from maintenance.bootstrap import init_app, render_alert_banner, render_demo_sidebar, render_sidebar_footer
 from maintenance.config import ACTION_LABELS
 from maintenance.analytics import shift_comparison
-from maintenance.bootstrap import render_alert_banner
 from maintenance.insights import period_compare
 
 from maintenance.theme import page_setup
 
-page_setup("Historical Explorer", "🏛️")
+page_setup("Historical Explorer", "🏛️", set_config=False)
 init_app()
 st.title("🏛️ Historical Data Explorer")
 render_demo_sidebar()
@@ -23,6 +22,7 @@ render_alert_banner()
 
 machines = database.get_all_machines() or list(range(10))
 machine_id = st.sidebar.selectbox("Machine", machines, format_func=lambda x: f"Machine #{x}")
+render_sidebar_footer()
 
 history = database.get_reports_by_machine(machine_id)
 if history.empty:

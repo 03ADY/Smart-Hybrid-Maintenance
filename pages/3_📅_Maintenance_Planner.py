@@ -9,15 +9,14 @@ import streamlit as st
 import database
 from maintenance.analytics import build_maintenance_calendar, cmms_export_payload
 from maintenance.inventory import inventory_status, recommend_parts
-from maintenance.bootstrap import get_system, init_app, load_sensor_pool, render_alert_banner, render_demo_sidebar
+from maintenance.bootstrap import get_system, init_app, load_sensor_pool, render_alert_banner
 from maintenance.config import APP_NAME, NUM_MACHINES
 
 from maintenance.theme import page_setup
 
-page_setup("Maintenance Planner", "📅")
+page_setup("Maintenance Planner", "📅", set_config=False)
 init_app()
 st.title("📅 Maintenance Planner")
-render_demo_sidebar()
 
 system = get_system()
 pool = load_sensor_pool()

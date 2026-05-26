@@ -17,12 +17,13 @@ from maintenance.bootstrap import (
     load_sensor_pool,
     render_alert_banner,
     render_demo_sidebar,
+    render_sidebar_footer,
 )
 from maintenance.config import PLAYBOOKS
 from maintenance.inventory import recommend_parts
 from maintenance.theme import page_setup
 
-page_setup("Live Dashboard", "📈")
+page_setup("Live Dashboard", "📈", set_config=False)
 init_app()
 st.title("📈 Live Operations Dashboard")
 
@@ -52,6 +53,8 @@ if st.sidebar.button("📅 Schedule service"):
 hist = database.get_reports_by_machine(mid)
 if not hist.empty and st.sidebar.button("📥 Export machine CSV"):
     st.sidebar.download_button("Download", hist.to_csv(index=False).encode(), f"machine_{mid}.csv")
+
+render_sidebar_footer()
 
 slot = st.empty()
 

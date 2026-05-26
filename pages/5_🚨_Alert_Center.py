@@ -4,15 +4,14 @@ import pandas as pd
 import streamlit as st
 
 import database
-from maintenance.bootstrap import init_app, render_demo_sidebar
+from maintenance.bootstrap import init_app
 from maintenance.config import APP_NAME
 
 from maintenance.theme import page_setup
 
-page_setup("Alert Center", "🚨")
+page_setup("Alert Center", "🚨", set_config=False)
 init_app()
 st.title("🚨 Alert Center")
-render_demo_sidebar()
 
 if "acked_alerts" not in st.session_state:
     st.session_state.acked_alerts = set()
