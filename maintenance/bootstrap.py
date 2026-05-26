@@ -51,16 +51,19 @@ def render_insight_cards(cards: list[dict]) -> None:
     for c in cards[:5]:
         border = {"positive": "#22c55e", "warning": "#f59e0b", "neutral": "#6366f1"}.get(c.get("tone", "neutral"), "#6366f1")
         html += (
-            f'<div style="background:#fff;border:1px solid #e2e8f0;border-left:4px solid {border};'
-            f'border-radius:10px;padding:0.9rem 1rem;">'
-            f'<div style="font-size:0.85rem;color:#64748b;">{c["icon"]} {c["title"]}</div>'
-            f'<div style="font-size:0.92rem;color:#0f172a;margin-top:0.35rem;">{c["body"]}</div></div>'
+            f'<div style="background:rgba(30,41,59,0.92);border:1px solid rgba(148,163,184,0.15);'
+            f'border-left:4px solid {border};border-radius:12px;padding:0.9rem 1rem;">'
+            f'<div style="font-size:0.85rem;color:#94a3b8;">{c["icon"]} {c["title"]}</div>'
+            f'<div style="font-size:0.92rem;color:#e2e8f0;margin-top:0.35rem;">{c["body"]}</div></div>'
         )
     html += "</div>"
     st.markdown(html, unsafe_allow_html=True)
 
 
 def render_demo_sidebar() -> dict:
+    from maintenance.theme import inject_theme
+
+    inject_theme()
     st.markdown("### 🎬 Demo")
     present = st.toggle("Present mode", value=st.session_state.get("present_mode", True), key="present_mode_toggle")
     st.session_state.present_mode = present

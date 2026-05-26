@@ -6,19 +6,19 @@ import database
 from maintenance.bootstrap import fleet_status_color, init_app, model_metadata
 from maintenance.config import APP_NAME, FEATURE_NAMES, MODEL_PATH, NUM_MACHINES
 from maintenance.oee import compute_oee
+from maintenance.theme import hero_html, inject_theme
 
 init_app()
 st.set_page_config(page_title=APP_NAME, page_icon="⚙️", layout="wide")
+inject_theme()
 
 if st.session_state.get("seed_msg"):
     st.success(st.session_state.pop("seed_msg"))
 
-st.markdown(f"""
-<div style="background:linear-gradient(135deg,#0f766e,#0369a1);padding:2rem;border-radius:14px;color:white;">
-<h1 style="margin:0;">⚙️ {APP_NAME}</h1>
-<p style="margin:0.5rem 0 0;">OEE · Alerts · Spare parts · Full audit trail</p>
-</div>
-""", unsafe_allow_html=True)
+st.markdown(
+    hero_html(APP_NAME, "OEE · Alerts · Spare parts · Full audit trail", "⚙️"),
+    unsafe_allow_html=True,
+)
 
 meta = model_metadata()
 kpis = database.fleet_kpis()
