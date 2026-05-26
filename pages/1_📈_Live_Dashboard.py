@@ -20,9 +20,10 @@ from maintenance.bootstrap import (
 )
 from maintenance.config import PLAYBOOKS
 from maintenance.inventory import recommend_parts
+from maintenance.theme import page_setup
 
+page_setup("Live Dashboard", "📈")
 init_app()
-st.set_page_config(page_title="Live Dashboard", page_icon="📈", layout="wide")
 st.title("📈 Live Operations Dashboard")
 
 if not ensure_model_message():

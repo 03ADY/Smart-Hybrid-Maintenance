@@ -7,8 +7,10 @@ import database
 from maintenance.bootstrap import init_app, render_demo_sidebar
 from maintenance.config import APP_NAME
 
+from maintenance.theme import page_setup
+
+page_setup("Alert Center", "🚨")
 init_app()
-st.set_page_config(page_title="Alert Center", page_icon="🚨", layout="wide")
 st.title("🚨 Alert Center")
 render_demo_sidebar()
 

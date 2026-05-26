@@ -22,9 +22,10 @@ from maintenance.bootstrap import (
 from maintenance.config import APP_NAME, NUM_MACHINES
 from maintenance.insights import estimate_roi, executive_brief, fleet_summary, insight_cards
 from maintenance.reports import html_executive_report
+from maintenance.theme import page_setup
 
+page_setup("Fleet Command", "🌐")
 init_app()
-st.set_page_config(page_title="Fleet Command", page_icon="🌐", layout="wide")
 st.title("🌐 Fleet Command Center")
 
 if st.session_state.get("seed_msg"):

@@ -13,8 +13,10 @@ from maintenance.analytics import shift_comparison
 from maintenance.bootstrap import render_alert_banner
 from maintenance.insights import period_compare
 
+from maintenance.theme import page_setup
+
+page_setup("Historical Explorer", "🏛️")
 init_app()
-st.set_page_config(page_title="Historical Explorer", page_icon="🏛️", layout="wide")
 st.title("🏛️ Historical Data Explorer")
 render_demo_sidebar()
 render_alert_banner()

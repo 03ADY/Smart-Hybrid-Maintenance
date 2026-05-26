@@ -8,8 +8,10 @@ from maintenance.analytics import aggregate_drivers, fleet_health_heatmap, shift
 from maintenance.bootstrap import init_app, model_metadata, render_demo_sidebar
 from maintenance.config import APP_NAME, FEATURE_NAMES, MODEL_PATH
 
+from maintenance.theme import page_setup
+
+page_setup("Model Insights", "🔬")
 init_app()
-st.set_page_config(page_title="Model Insights", page_icon="🔬", layout="wide")
 st.title("🔬 Model & Fleet Analytics")
 render_demo_sidebar()
 

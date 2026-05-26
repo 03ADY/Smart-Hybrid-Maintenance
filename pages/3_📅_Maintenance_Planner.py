@@ -12,8 +12,10 @@ from maintenance.inventory import inventory_status, recommend_parts
 from maintenance.bootstrap import get_system, init_app, load_sensor_pool, render_alert_banner, render_demo_sidebar
 from maintenance.config import APP_NAME, NUM_MACHINES
 
+from maintenance.theme import page_setup
+
+page_setup("Maintenance Planner", "📅")
 init_app()
-st.set_page_config(page_title="Maintenance Planner", page_icon="📅", layout="wide")
 st.title("📅 Maintenance Planner")
 render_demo_sidebar()
 

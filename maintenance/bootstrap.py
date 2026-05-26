@@ -61,9 +61,6 @@ def render_insight_cards(cards: list[dict]) -> None:
 
 
 def render_demo_sidebar() -> dict:
-    from maintenance.theme import inject_theme
-
-    inject_theme()
     st.markdown("### 🎬 Demo")
     present = st.toggle("Present mode", value=st.session_state.get("present_mode", True), key="present_mode_toggle")
     st.session_state.present_mode = present

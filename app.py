@@ -6,11 +6,10 @@ import database
 from maintenance.bootstrap import fleet_status_color, init_app, model_metadata
 from maintenance.config import APP_NAME, FEATURE_NAMES, MODEL_PATH, NUM_MACHINES
 from maintenance.oee import compute_oee
-from maintenance.theme import hero_html, inject_theme
+from maintenance.theme import fleet_card_html, hero_html, page_setup
 
+page_setup(APP_NAME, "⚙️")
 init_app()
-st.set_page_config(page_title=APP_NAME, page_icon="⚙️", layout="wide")
-inject_theme()
 
 if st.session_state.get("seed_msg"):
     st.success(st.session_state.pop("seed_msg"))
@@ -48,11 +47,7 @@ if not latest.empty:
         score = float(row["health_score"].iloc[-1]) if not row.empty else 0.9
         color = fleet_status_color(score)
         with cols[mid % 5]:
-            st.markdown(
-                f'<div style="text-align:center;padding:0.5rem;border:2px solid {color};border-radius:8px;">'
-                f'<b>#{mid}</b><br><span style="color:{color};font-size:1.2rem;">{score:.0%}</span></div>',
-                unsafe_allow_html=True,
-            )
+            st.markdown(fleet_card_html(mid, score, color), unsafe_allow_html=True)
 
 with st.expander("✅ Presenter checklist (2 min)", expanded=False):
     st.markdown("""
