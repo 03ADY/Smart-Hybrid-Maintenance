@@ -1,202 +1,128 @@
-import streamlit as st
-import tensorflow as tf
-import numpy as np
-import pandas as pd
-from tensorflow.keras.models import load_model
-from datetime import datetime
-from typing import Dict, List, Tuple, Any
-from dataclasses import dataclass
+"""Single-machine live telemetry and work orders."""
+
+import json
 import random
-import os
-import matplotlib.pyplot as plt
-import seaborn as sns
 import time
+
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import streamlit as st
+
 import database
+from maintenance.bootstrap import (
+    ensure_model_message,
+    get_system,
+    init_app,
+    load_sensor_pool,
+    render_alert_banner,
+    render_demo_sidebar,
+)
+from maintenance.config import PLAYBOOKS
+from maintenance.inventory import recommend_parts
 
-# Initialize the database at the start of this page
-database.init_db()
-
-# ==============================================================================
-#                      CORE AI/ML LOGIC AND CLASSES
-# ==============================================================================
-
-# --- Configuration Constants ---
-NUM_MACHINES = 10
-FAULTY_MACHINES = [2, 5, 7, 9]
-
-FAULT_SCENARIOS = [
-    {"problem": "Critical Overheating Detected", "resolution": "Action: Immediately inspect cooling system and reduce machine load."},
-    {"problem": "Excessive Vibration Anomaly", "resolution": "Action: Check motor bearings and alignment. Schedule for balancing."},
-    {"problem": "Pressure Drop Exceeds Safe Limits", "resolution": "Action: Inspect for leaks in hydraulic lines and check pump integrity."},
-    {"problem": "Unstable Voltage Fluctuation", "resolution": "Action: Verify power supply unit and check for loose electrical connections."}
-]
-
-@dataclass
-class SupervisedConfig:
-    sequence_length: int = 100
-    feature_dim: int = 10
-
-@dataclass
-class AdvancedRLConfig:
-    state_dim: int = 4
-    action_dim: int = 4
-    num_agents: int = NUM_MACHINES
-
-FEATURE_NAMES = [
-    'vibration', 'temperature', 'pressure', 'current',
-    'voltage', 'rpm', 'oil_level', 'humidity',
-    'acoustic', 'magnetic_field'
-]
-
-def create_synthetic_data(config: SupervisedConfig, num_samples: int = 1000) -> np.ndarray:
-    time = np.linspace(0, 10, num_samples)
-    features = []
-    for i in range(config.feature_dim):
-        if i < 2: features.append(np.sin(time + i * np.pi / 4))
-        else: features.append(np.random.uniform(0, 1, num_samples))
-    features = np.column_stack(features).astype(np.float32)
-    X = []
-    for i in range(len(features) - config.sequence_length):
-        X.append(features[i:i + config.sequence_length])
-    return np.array(X, dtype=np.float32)
-
-class HybridMaintenanceSystem:
-    def __init__(self, trained_model):
-        self.health_model = trained_model
-        self.rl_config = AdvancedRLConfig()
-        self.explainability = self.ExplainabilityModule(FEATURE_NAMES)
-        self.metrics = {'health_predictions': [], 'explanations': []}
-
-    def predict_health(self, sensor_data: np.ndarray) -> Dict[str, Any]:
-        if len(sensor_data.shape) == 2:
-            sensor_data = sensor_data[np.newaxis, ...]
-        predicted_value = self.health_model.predict(sensor_data, verbose=0)[0][0]
-        health_score = 1 / (1 + max(0, predicted_value))
-        return {'health_score': float(health_score), 'failure_prob': 1 - float(health_score), 'rul': float(health_score) * 100}
-
-    def monitor_machine(self, machine_id: int, sensor_data: np.ndarray) -> Dict[str, Any]:
-        health_metrics = self.predict_health(sensor_data)
-        
-        # ✅ FIX 1: Initialize default values for every run
-        problem_description = "No issue detected."
-        suggested_resolution = "Continue standard operation."
-
-        # Artificially degrade faulty machines sometimes
-        if machine_id in FAULTY_MACHINES and random.random() < 0.25:
-            health_score = random.uniform(0.2, 0.5)
-            health_metrics['health_score'] = health_score
-            health_metrics['failure_prob'] = 1 - health_score
-            health_metrics['rul'] = health_score * 100
-            
-            fault = random.choice(FAULT_SCENARIOS)
-            problem_description = fault["problem"]
-            suggested_resolution = fault["resolution"]
-
-        if health_metrics['health_score'] < 0.5: action = 3
-        elif health_metrics['health_score'] < 0.75: action = 2
-        else: action = 0
-        
-        explanation = self.explainability.explain_prediction()
-        # ✅ FIX 1 (cont.): Ensure these keys are always added to the report
-        report = {
-            'machine_id': machine_id, 'timestamp': datetime.utcnow().isoformat(),
-            'health_metrics': health_metrics,
-            'maintenance_action': {'action': action},
-            'explanation': explanation,
-            'problem_description': problem_description,
-            'suggested_resolution': suggested_resolution
-        }
-        self.metrics['health_predictions'].append(report['health_metrics'])
-        self.metrics['explanations'].append(report['explanation'])
-        return report
-
-    def visualize_results(self) -> plt.Figure:
-        fig, ax = plt.subplots(figsize=(10, 4))
-        health_df = pd.DataFrame(self.metrics['health_predictions'][-100:])
-        sns.lineplot(data=health_df['health_score'], ax=ax, label="Health Score")
-        ax.set_title('Health Score Over Time')
-        ax.set_ylim(0, 1)
-        ax.axhline(0.5, color='red', linestyle='--', label='Critical Threshold')
-        ax.axhline(0.75, color='orange', linestyle='--', label='Warning Threshold')
-        ax.legend()
-        plt.tight_layout()
-        return fig
-
-    class ExplainabilityModule:
-        def __init__(self, feature_names: List[str]): self.feature_names = feature_names
-        def explain_prediction(self) -> Dict[str, float]:
-            imp = np.abs(np.random.normal(0, 1, len(self.feature_names)))
-            return dict(zip(self.feature_names, imp / np.sum(imp)))
-
-# ==============================================================================
-#                      STREAMLIT UI AND SIMULATION LOGIC
-# ==============================================================================
-
+init_app()
 st.set_page_config(page_title="Live Dashboard", page_icon="📈", layout="wide")
-st.title("📈 Live Dashboard (with Trained Model)")
+st.title("📈 Live Operations Dashboard")
 
-@st.cache_resource
-def load_trained_model():
-    try:
-        model = load_model('health_model.h5')
-        return model
-    except Exception as e:
-        st.error(f"Error loading model: {e}. Ensure 'health_model.h5' is in your GitHub repository.", icon="🚨")
-        return None
+if not ensure_model_message():
+    st.stop()
 
-@st.cache_data
-def load_simulation_data():
-    return create_synthetic_data(SupervisedConfig(), num_samples=500)
+opts = render_demo_sidebar()
+system = get_system()
+pool = load_sensor_pool()
+render_alert_banner(st.session_state.get("fleet_reports"))
 
-trained_model = load_trained_model()
-X_data = load_simulation_data()
+mid = st.sidebar.selectbox("Machine", range(10), format_func=lambda x: f"Machine #{x}")
+compare = st.sidebar.checkbox("Compare with machine", value=False)
+compare_mid = st.sidebar.selectbox("Compare to", range(10), index=1, format_func=lambda x: f"Machine #{x}") if compare else None
+speed = 2 if opts["present"] else st.sidebar.slider("Refresh (sec)", 1, 5, 2)
 
-if trained_model:
-    if 'system' not in st.session_state:
-        st.session_state.system = HybridMaintenanceSystem(trained_model)
-    system = st.session_state.system
+if st.sidebar.button("▶️ Start simulation", type="primary"):
+    st.session_state.run = True
+if st.sidebar.button("⏹️ Stop"):
+    st.session_state.run = False
 
-    st.sidebar.header("Simulation Controls")
-    machine_id = st.sidebar.selectbox('Select a Machine to Monitor', options=list(range(NUM_MACHINES)), format_func=lambda x: f"Machine #{x}")
+if st.sidebar.button("✅ Acknowledge alert"):
+    st.session_state.ack = True
+if st.sidebar.button("📅 Schedule service"):
+    st.session_state.scheduled = True
 
-    if 'run_simulation' not in st.session_state: st.session_state.run_simulation = False
-    if st.sidebar.button('▶️ Start Live Simulation', use_container_width=True, type="primary"):
-        st.session_state.run_simulation = True
+hist = database.get_reports_by_machine(mid)
+if not hist.empty and st.sidebar.button("📥 Export machine CSV"):
+    st.sidebar.download_button("Download", hist.to_csv(index=False).encode(), f"machine_{mid}.csv")
+
+slot = st.empty()
+
+if st.session_state.get("run") and system:
+    idx = random.randint(0, len(pool) - 50)
+    for i in range(idx, min(idx + 3, len(pool))):
+        if not st.session_state.get("run"):
+            break
+        report = system.monitor_machine(mid, pool[i])
+        database.add_report(report)
+        h = report["health_metrics"]
+        with slot.container():
+            c1, c2, c3, c4, c5 = st.columns(5)
+            c1.metric("Health", f"{h['health_score']:.0%}")
+            c2.metric("Failure prob", f"{h['failure_prob']:.0%}", delta_color="inverse")
+            c3.metric("RUL (est.)", f"{h['rul']:.0f} h")
+            c4.metric("Status", h.get("status", "—"))
+            c5.metric("Action", report["maintenance_action"]["label"])
+
+            if report["problem_description"] != "No issue detected.":
+                st.error(f"**{report['problem_description']}** ({report.get('priority', '')}) — {report['suggested_resolution']}")
+                pb = PLAYBOOKS.get(report["problem_description"])
+                if pb:
+                    st.info(f"Playbook: {pb}")
+            else:
+                st.success("All sensors nominal")
+
+            if report.get("sensor_alerts"):
+                st.warning("Sensor anomalies: " + " · ".join(report["sensor_alerts"]))
+
+            parts = recommend_parts(report.get("problem_description", ""))
+            if parts:
+                st.markdown("**Suggested spare parts:** " + ", ".join(f"{p['sku']} ({p['name']})" for p in parts))
+
+            if compare and compare_mid is not None and compare_mid != mid:
+                rep_b = system.monitor_machine(compare_mid, pool[min(i + 1, len(pool) - 1)])
+                h2 = rep_b["health_metrics"]
+                st.markdown(f"**Compare Machine #{compare_mid}:** health {h2['health_score']:.0%} vs #{mid} {h['health_score']:.0%}")
+
+            wo = report.get("work_order", {})
+            w1, w2, w3 = st.columns(3)
+            w1.metric("Work order", wo.get("title", "—")[:40])
+            w2.metric("ETA (h)", wo.get("eta_hours", 0))
+            status = wo.get("status", "—")
+            if st.session_state.get("ack"):
+                status = "ACKNOWLEDGED"
+            if st.session_state.get("scheduled"):
+                status = "SCHEDULED"
+            w3.metric("WO status", status)
+
+            sensors = report.get("sensor_snapshot", {})
+            if sensors:
+                sdf = pd.DataFrame({"sensor": list(sensors.keys()), "value": list(sensors.values())})
+                sc1, sc2 = st.columns(2)
+                with sc1:
+                    st.plotly_chart(px.bar(sdf, x="sensor", y="value", title="Live sensor strip"), use_container_width=True)
+                with sc2:
+                    exp = report.get("explanation", {})
+                    edf = pd.DataFrame({"sensor": list(exp.keys()), "driver": list(exp.values())})
+                    st.plotly_chart(px.bar(edf, x="sensor", y="driver", title="Top drivers (normalized)"), use_container_width=True)
+
+            trend = system.health_trend_df()
+            if not trend.empty:
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(y=trend["health_score"], mode="lines", name="Health"))
+                fig.add_hline(y=0.5, line_dash="dash", line_color="red", annotation_text="Critical")
+                fig.add_hline(y=0.75, line_dash="dash", line_color="orange", annotation_text="Warning")
+                fig.update_layout(height=280, yaxis_range=[0, 1], title="Health trend (session)")
+                st.plotly_chart(fig, use_container_width=True)
+
+        time.sleep(speed)
+    if st.session_state.get("run"):
         st.rerun()
-    if st.sidebar.button('⏹️ Stop Live Simulation', use_container_width=True):
-        st.session_state.run_simulation = False
-        st.rerun()
-
-    placeholder = st.empty()
-    if st.session_state.run_simulation:
-        st.sidebar.success(f"Live simulation running for Machine #{machine_id}...")
-        start_index = random.randint(0, len(X_data) - 50)
-        for i in range(start_index, len(X_data)):
-            if not st.session_state.run_simulation: break
-            sensor_data_sample = X_data[i]
-            report = system.monitor_machine(machine_id, sensor_data_sample)
-            database.add_report(report)
-            with placeholder.container():
-                st.header(f"Live Status for Machine #{machine_id}", anchor=False)
-                
-                col1, col2, col3 = st.columns(3)
-                col1.metric("Health Score", f"{report['health_metrics']['health_score']:.2f}")
-                col2.metric("Failure Probability", f"{report['health_metrics']['failure_prob']:.2%}", delta_color="inverse")
-                action_map = {0: "✅ No Action", 2: "⚠️ Major Service", 3: "🚨 Replace"}
-                col3.metric("Recommended Action", action_map.get(report['maintenance_action']['action'], 'Unknown'))
-                
-                st.divider()
-                # ✅ FIX 2: Use the safer .get() method to access the key
-                if report.get("problem_description") and report.get("problem_description") != "No issue detected.":
-                    st.error(f"**Problem:** {report['problem_description']}", icon="🚨")
-                    st.warning(f"**Suggested Resolution:** {report['suggested_resolution']}", icon="🛠️")
-                else:
-                    st.success("**Status:** All systems nominal.", icon="✅")
-
-                fig = system.visualize_results()
-                st.pyplot(fig)
-                plt.close(fig)
-
-            time.sleep(2)
-    else:
-        st.info("Select a machine and click 'Start Live Simulation' to begin.")
+else:
+    st.info("Start simulation to stream live telemetry, sensors, and work orders.")
