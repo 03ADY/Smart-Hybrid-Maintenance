@@ -37,10 +37,13 @@ section[data-testid="stMain"],
   border-bottom: 1px solid rgba(148, 163, 184, 0.1);
 }
 
-h1, h2, h3, h4, h5, h6,
-p, li, span, label,
-[data-testid="stMarkdownContainer"] p,
-[data-testid="stMarkdownContainer"] li {
+section[data-testid="stMain"] h1,
+section[data-testid="stMain"] h2,
+section[data-testid="stMain"] h3,
+section[data-testid="stMain"] h4,
+section[data-testid="stMain"] p,
+section[data-testid="stMain"] li,
+section[data-testid="stMain"] [data-testid="stMarkdownContainer"] p {
   color: #e2e8f0 !important;
 }
 
@@ -75,10 +78,95 @@ div[data-testid="stMetricDelta"] {
   color: #f8fafc !important;
 }
 
+/* Sidebar — force dark background + light text (Streamlit nests white layers) */
+section[data-testid="stSidebar"],
 div[data-testid="stSidebar"],
-div[data-testid="stSidebar"] > div {
-  background: linear-gradient(180deg, #0f172a 0%, #134e4a 100%) !important;
-  border-right: 1px solid rgba(148, 163, 184, 0.12);
+div[data-testid="stSidebar"] > div,
+[data-testid="stSidebarContent"],
+[data-testid="stSidebarUserContent"],
+[data-testid="stSidebarNav"],
+[data-testid="stSidebarNav"] > ul {
+  background-color: #0f172a !important;
+  background-image: linear-gradient(180deg, #0f172a 0%, #134e4a 100%) !important;
+  color: #f1f5f9 !important;
+}
+
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] small,
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stSidebar"] [data-testid="stWidgetLabel"] p,
+[data-testid="stSidebar"] .stCaption,
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+  color: #e2e8f0 !important;
+}
+
+/* Multipage navigation links */
+[data-testid="stSidebarNav"] a,
+[data-testid="stSidebarNav"] span,
+[data-testid="stSidebarNav"] li {
+  color: #cbd5e1 !important;
+}
+[data-testid="stSidebarNav"] a[aria-current="page"] {
+  background-color: rgba(45, 212, 191, 0.18) !important;
+  color: #2dd4bf !important;
+  font-weight: 600 !important;
+}
+
+/* Inputs in sidebar */
+[data-testid="stSidebar"] input,
+[data-testid="stSidebar"] textarea,
+[data-testid="stSidebar"] [data-baseweb="select"] > div,
+[data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] > div {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: rgba(148, 163, 184, 0.35) !important;
+}
+
+[data-testid="stSidebar"] .stSlider label,
+[data-testid="stSidebar"] .stSlider [data-testid="stTickBarMin"],
+[data-testid="stSidebar"] .stSlider [data-testid="stTickBarMax"] {
+  color: #94a3b8 !important;
+}
+
+[data-testid="stSidebar"] .stButton > button {
+  background: linear-gradient(135deg, ACCENT_A, ACCENT_B) !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-weight: 600 !important;
+}
+[data-testid="stSidebar"] .stButton > button:hover {
+  border-color: #2dd4bf !important;
+  color: #ffffff !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stExpander"] {
+  background-color: rgba(30, 41, 59, 0.85) !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary p,
+[data-testid="stSidebar"] [data-testid="stExpander"] svg {
+  color: #e2e8f0 !important;
+  fill: #e2e8f0 !important;
+}
+
+[data-testid="stSidebar"] hr {
+  border-color: rgba(148, 163, 184, 0.25) !important;
+}
+
+[data-testid="stSidebar"] .stRadio label,
+[data-testid="stSidebar"] .stRadio label p,
+[data-testid="stSidebar"] .stRadio [data-testid="stMarkdownContainer"] p {
+  color: #e2e8f0 !important;
+}
+[data-testid="stSidebar"] .stRadio [role="radiogroup"] label {
+  background-color: rgba(30, 41, 59, 0.65) !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  border-radius: 8px !important;
 }
 
 div[data-testid="stExpander"] {
